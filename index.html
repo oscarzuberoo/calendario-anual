@@ -21,11 +21,15 @@
         .stat-box { display: flex; flex-direction: column; align-items: flex-end; }
         .stat-value { font-weight: bold; font-size: 1.1rem; color: #2196f3; }
         #calendar-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); width: 100%; height: calc(100vh - 61px); overflow-y: auto; border-left: 1px solid var(--border-color); }
-        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; }
+        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; transition: transform 0.1s; }
+        .day-box:active { transform: scale(0.98); }
+        
+        /* Estilo para días seleccionados en bloque */
+        .selected-block { outline: 3px solid #2196f3 !important; outline-offset: -3px; z-index: 5; }
+
         .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
         .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
         
-        /* Ajuste para evitar choque con festivos */
         .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); transition: bottom 0.2s; }
         .is-official-holiday .weekday-label { bottom: 18px; font-size: 0.65rem; opacity: 0.7; }
 
@@ -66,7 +70,7 @@
     <header>
         <div class="header-left">
             <h1 id="year-header">2026</h1>
-            <span></span>
+            <span>Zaragoza Sync (Shift + Clic para selección múltiple)</span>
         </div>
         <div class="stats-panel">
             <div class="stat-box"><span class="stat-value" id="progress-percent">0%</span><span class="stat-label">Completado</span></div>
@@ -79,7 +83,7 @@
 
     <div class="modal-overlay" id="noteModal">
         <div class="modal-box">
-            <h3 id="modalTitle" style="margin-top:0; text-align: center;">Editar Día</h3>
+            <h3 id="modalTitle" style="margin-top:0; text-align: center;">Editar Días</h3>
             <div class="color-selector">
                 <div class="color-dot" style="background: var(--c-default);" onclick="selectColor('default')">X</div>
                 <div class="color-dot" style="background: var(--c-festivo);" onclick="selectColor('festivo')"></div>
@@ -87,7 +91,7 @@
                 <div class="color-dot" style="background: var(--c-personal);" onclick="selectColor('personal')"></div>
                 <div class="color-dot" style="background: var(--c-trabajo);" onclick="selectColor('trabajo')"></div>
             </div>
-            <textarea id="noteText" placeholder="Nota general..."></textarea>
+            <textarea id="noteText" placeholder="Nota para todos los días seleccionados..."></textarea>
             <button class="agenda-toggle" onclick="toggleSchedule()"><span>🕒 Agenda Detallada</span><span id="arrow-icon">▼</span></button>
             <div id="hourly-container"></div>
             <div class="modal-buttons">
@@ -107,6 +111,13 @@
         const weekdaysFull = ["D", "L", "M", "X", "J", "V", "S"];
         const currentYear = 2026;
         let eventsData = {}; 
+
+        // Variables para selección múltiple
+        let selectedDays = [];
+        let isShiftPressed = false;
+
+        window.onkeydown = (e) => { if (e.key === "Shift") isShiftPressed = true; };
+        window.onkeyup = (e) => { isShiftPressed = false; };
 
         const holidays2026 = { "0-1":"Año Nuevo","0-6":"Reyes","0-29":"San Valero","2-5":"Cincomarzada","3-2":"Jueves Santo","3-3":"Viernes Santo","3-23":"San Jorge","4-1":"Día del Trabajo","7-15":"Asunción","9-12":"El Pilar","10-1":"Todos los Santos","11-6":"Constitución","11-8":"Inmaculada","11-25":"Navidad" };
 
@@ -156,13 +167,39 @@
                         <span class="weekday-label">${weekdaysFull[dateObj.getDay()]}</span>
                         <span class="note-indicator"></span>
                     `;
-                    cell.onclick = () => openModal(dateId, d, monthsFull[m]);
+                    
+                    cell.onclick = (e) => manejarClicDia(dateId, d, monthsFull[m]);
                     container.appendChild(cell);
                 }
             }
         }
 
-        let currentId = null;
+        function manejarClicDia(id, d, m) {
+            const el = document.getElementById(id);
+            if (isShiftPressed) {
+                if (selectedDays.includes(id)) {
+                    selectedDays = selectedDays.filter(item => item !== id);
+                    el.classList.remove('selected-block');
+                } else {
+                    selectedDays.push(id);
+                    el.classList.add('selected-block');
+                }
+            } else {
+                // Si no hay shift, limpiamos selección previa y abrimos ese día
+                limpiarSeleccionVisual();
+                selectedDays = [id];
+                openModal(id, d, m);
+            }
+        }
+
+        function limpiarSeleccionVisual() {
+            selectedDays.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.remove('selected-block');
+            });
+            selectedDays = [];
+        }
+
         let selectedColor = 'default';
         const hoursList = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"];
         
@@ -176,21 +213,27 @@
         generateHourlyInputs();
 
         function openModal(id, day, month) {
-            currentId = id;
-            document.getElementById('modalTitle').innerText = `${day} de ${month}`;
-            const data = eventsData[id] || { text: '', color: 'default', schedule: {} };
+            const isMultiple = selectedDays.length > 1;
+            document.getElementById('modalTitle').innerText = isMultiple ? `Editando ${selectedDays.length} días` : `${day} de ${month}`;
+            
+            // Cargar datos del primer día seleccionado (o vacío si es múltiple)
+            const data = isMultiple ? { text: '', color: 'default', schedule: {} } : (eventsData[id] || { text: '', color: 'default', schedule: {} });
+            
             document.getElementById('noteText').value = data.text || '';
             selectColor(data.color || 'default');
             document.querySelectorAll('.hour-input').forEach(inp => inp.value = (data.schedule && data.schedule[inp.dataset.hour]) || '');
             document.getElementById('noteModal').style.display = 'flex';
         }
 
-        function closeModal() { document.getElementById('noteModal').style.display = 'none'; }
+        function closeModal() { 
+            document.getElementById('noteModal').style.display = 'none'; 
+            limpiarSeleccionVisual();
+        }
 
         async function saveData() {
             const btn = document.getElementById('btnGuardar');
             const originalText = btn.innerText;
-            btn.innerText = "Sincronizando...";
+            btn.innerText = "Sincronizando bloque...";
             btn.disabled = true;
 
             const scheduleObj = {};
@@ -202,14 +245,16 @@
                 schedule: scheduleObj 
             };
 
-            await _supabase.from('Calendario').delete().eq('fecha', currentId);
-            
-            if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
-                const { error } = await _supabase.from('Calendario').insert([{ fecha: currentId, otros: JSON.stringify(dataObj) }]);
-                if (error) alert("Error al sincronizar: " + error.message);
-                eventsData[currentId] = dataObj;
-            } else {
-                delete eventsData[currentId];
+            // Ejecutar para todos los días seleccionados
+            for (const dayId of selectedDays) {
+                await _supabase.from('Calendario').delete().eq('fecha', dayId);
+                
+                if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
+                    await _supabase.from('Calendario').insert([{ fecha: dayId, otros: JSON.stringify(dataObj) }]);
+                    eventsData[dayId] = dataObj;
+                } else {
+                    delete eventsData[dayId];
+                }
             }
 
             generarCalendario();
