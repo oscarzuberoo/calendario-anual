@@ -24,9 +24,19 @@
         .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; }
         .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
         .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
-        .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); }
+        
+        /* Ajuste para evitar choque con festivos */
+        .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); transition: bottom 0.2s; }
+        .is-official-holiday .weekday-label { bottom: 18px; font-size: 0.65rem; opacity: 0.7; }
+
         .is-official-holiday { background-color: var(--c-auto-holiday); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px); }
-        .holiday-name { position: absolute; bottom: 2px; left: 2px; width: 95%; font-size: 0.6rem; color: var(--t-auto-holiday); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .holiday-name { 
+            position: absolute; bottom: 2px; left: 0; width: 100%; 
+            font-size: 0.55rem; color: var(--t-auto-holiday); font-weight: bold; 
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; 
+        }
+
         .is-today { box-shadow: inset 0 0 0 3px var(--today-border) !important; }
         .note-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background-color: var(--has-note-color); border-radius: 50%; display: none; }
         .has-note .note-indicator { display: block; }
@@ -56,7 +66,7 @@
     <header>
         <div class="header-left">
             <h1 id="year-header">2026</h1>
-            <span></span>
+            <span>Zaragoza Sync</span>
         </div>
         <div class="stats-panel">
             <div class="stat-box"><span class="stat-value" id="progress-percent">0%</span><span class="stat-label">Completado</span></div>
@@ -88,7 +98,6 @@
     </div>
 
     <script>
-        // --- CONEXIÓN CONFIGURADA CON TUS DATOS ---
         const SUPABASE_URL = 'https://xafdvznumsbuucifzkpo.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhhZmR2em51bXNidXVjaWZ6a3BvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MTY2ODcsImV4cCI6MjA4NDk5MjY4N30.rV2S88YwE5I49WYe-xDc6rPdUng1AS0UT_SjuGfCsic';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -175,28 +184,7 @@
             document.querySelectorAll('.hour-input').forEach(inp => inp.value = (data.schedule && data.schedule[inp.dataset.hour]) || '');
             document.getElementById('noteModal').style.display = 'flex';
         }
-/* --- PEGA ESTO AQUÍ --- */
-        /* Ajuste para que la inicial del día no choque con el festivo */
-        .is-official-holiday .weekday-label {
-            bottom: 18px !important; /* Sube la letra del día (L, M, X...) */
-            font-size: 0.65rem;
-            opacity: 0.7;
-        }
 
-        .holiday-name {
-            position: absolute;
-            bottom: 2px;
-            left: 0;
-            width: 100%;
-            font-size: 0.55rem; /* Un pelín más pequeño para que no sature */
-            color: var(--t-auto-holiday);
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            text-align: center;
-        }
-        /* ----------------------- */
         function closeModal() { document.getElementById('noteModal').style.display = 'none'; }
 
         async function saveData() {
@@ -214,7 +202,6 @@
                 schedule: scheduleObj 
             };
 
-            // Guardar en Supabase (Limpia anterior e inserta nuevo)
             await _supabase.from('Calendario').delete().eq('fecha', currentId);
             
             if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
