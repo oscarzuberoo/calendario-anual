@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador Zaragoza 2026 + Agenda Online</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff; --text-color: #333; --border-color: #d0d0d0;
+            --hover-bg: #f0f8ff; --today-bg: #e3f2fd; --today-border: #2196f3;
+            --has-note-color: #ff9800;
+            --c-default: #ffffff; --c-festivo: #ffcdd2; --c-viaje: #c8e6c9;   
+            --c-personal: #bbdefb; --c-trabajo: #fff9c4; 
+            --c-auto-holiday: #ffebee; --t-auto-holiday: #c62828;
+        }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Arial; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        header { padding: 0 20px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; height: 60px; }
+        .header-left h1 { margin: 0; font-size: 1.4rem; color: #444; }
+        .stats-panel { display: flex; gap: 20px; text-align: right; font-size: 0.85rem; }
+        .stat-box { display: flex; flex-direction: column; align-items: flex-end; }
+        .stat-value { font-weight: bold; font-size: 1.1rem; color: #2196f3; }
+        #calendar-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); width: 100%; height: calc(100vh - 61px); overflow-y: auto; border-left: 1px solid var(--border-color); }
+        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; }
+        .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
+        .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
+        .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); }
+        .is-official-holiday { background-color: var(--c-auto-holiday); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px); }
+        .holiday-name { position: absolute; bottom: 2px; left: 2px; width: 95%; font-size: 0.6rem; color: var(--t-auto-holiday); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .is-today { box-shadow: inset 0 0 0 3px var(--today-border) !important; }
+        .note-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background-color: var(--has-note-color); border-radius: 50%; display: none; }
+        .has-note .note-indicator { display: block; }
+        .bg-festivo { background: var(--c-festivo) !important; }
+        .bg-viaje { background: var(--c-viaje) !important; }
+        .bg-personal { background: var(--c-personal) !important; }
+        .bg-trabajo { background: var(--c-trabajo) !important; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: center; }
+        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; }
+        .color-selector { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .color-dot.selected { border-color: #333; transform: scale(1.15); }
+        #noteText { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
+        .agenda-toggle { background: #f1f3f4; border: 1px solid #ccc; padding: 8px; width: 100%; text-align: left; cursor: pointer; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        #hourly-container { display: none; flex-direction: column; gap: 5px; overflow-y: auto; margin-bottom: 10px; border-top: 1px solid #eee; padding-top: 10px; flex-grow: 1; }
+        .hour-row { display: flex; align-items: center; gap: 10px; }
+        .hour-label { width: 50px; font-size: 0.8rem; color: #666; font-weight: bold; }
+        .hour-input { flex-grow: 1; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
+        .modal-buttons { margin-top: auto; padding-top: 10px;}
+        button { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
+        .btn-save { background: #2196f3; color: white; float: right; }
+        .btn-cancel { background: #ddd; color: #333; float: right; margin-right: 10px;}
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-left">
+            <h1 id="year-header">2026</h1>
+            <span>Zaragoza Sync (Supabase + Vercel)</span>
+        </div>
+        <div class="stats-panel">
+            <div class="stat-box"><span class="stat-value" id="progress-percent">0%</span><span class="stat-label">Completado</span></div>
+            <div class="stat-box"><span class="stat-value" id="days-left">0</span><span class="stat-label">Días Restantes</span></div>
+            <div class="stat-box"><span class="stat-value" id="red-counter-val">0</span><span class="stat-label">Festivos Oficiales</span></div>
+        </div>
+    </header>
+
+    <div id="calendar-container"></div>
+
+    <div class="modal-overlay" id="noteModal">
+        <div class="modal-box">
+            <h3 id="modalTitle" style="margin-top:0; text-align: center;">Editar Día</h3>
+            <div class="color-selector">
+                <div class="color-dot" style="background: var(--c-default);" onclick="selectColor('default')">X</div>
+                <div class="color-dot" style="background: var(--c-festivo);" onclick="selectColor('festivo')"></div>
+                <div class="color-dot" style="background: var(--c-viaje);" onclick="selectColor('viaje')"></div>
+                <div class="color-dot" style="background: var(--c-personal);" onclick="selectColor('personal')"></div>
+                <div class="color-dot" style="background: var(--c-trabajo);" onclick="selectColor('trabajo')"></div>
+            </div>
+            <textarea id="noteText" placeholder="Nota general..."></textarea>
+            <button class="agenda-toggle" onclick="toggleSchedule()"><span>🕒 Agenda Detallada</span><span id="arrow-icon">▼</span></button>
+            <div id="hourly-container"></div>
+            <div class="modal-buttons">
+                <button class="btn-save" id="btnGuardar">Guardar en Nube</button>
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONEXIÓN CONFIGURADA CON TUS DATOS ---
+        const SUPABASE_URL = 'https://xafdvznumsbuucifzkpo.supabase.co';
+        const SUPABASE_KEY = 'sb_secret_YjL23bz9axGdmKGl7k3Mug_fFAGu-dk';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const container = document.getElementById('calendar-container');
+        const monthsFull = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+        const weekdaysFull = ["D", "L", "M", "X", "J", "V", "S"];
+        const currentYear = 2026;
+        let eventsData = {}; 
+
+        const holidays2026 = { "0-1":"Año Nuevo","0-6":"Reyes","0-29":"San Valero","2-5":"Cincomarzada","3-2":"Jueves Santo","3-3":"Viernes Santo","3-23":"San Jorge","4-1":"Día del Trabajo","7-15":"Asunción","9-12":"El Pilar","10-1":"Todos los Santos","11-6":"Constitución","11-8":"Inmaculada","11-25":"Navidad" };
+
+        async function init() {
+            await cargarDatosDesdeNube();
+            generarCalendario();
+            updateStats();
+        }
+
+        async function cargarDatosDesdeNube() {
+            try {
+                const { data, error } = await _supabase.from('Calendario').select('*');
+                if (data) {
+                    data.forEach(row => {
+                        eventsData[row.fecha] = JSON.parse(row.otros);
+                    });
+                }
+            } catch (err) { console.error("Error cargando datos:", err); }
+        }
+
+        function generarCalendario() {
+            container.innerHTML = '';
+            for (let m = 0; m < 12; m++) {
+                const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateObj = new Date(currentYear, m, d);
+                    const dateId = `${currentYear}-${m}-${d}`;
+                    const cell = document.createElement('div');
+                    cell.className = 'day-box';
+                    cell.id = dateId;
+
+                    if (holidays2026[`${m}-${d}`]) {
+                        cell.classList.add('is-official-holiday');
+                        cell.innerHTML += `<span class="holiday-name">${holidays2026[`${m}-${d}`]}</span>`;
+                    }
+
+                    const data = eventsData[dateId] || { color: 'default', text: '', schedule: {} };
+                    if (data.color !== 'default') cell.classList.add(`bg-${data.color}`);
+                    if (data.text || (data.schedule && Object.keys(data.schedule).length > 0)) cell.classList.add('has-note');
+                    
+                    const today = new Date();
+                    if (d === today.getDate() && m === today.getMonth() && currentYear === today.getFullYear()) cell.classList.add('is-today');
+
+                    cell.innerHTML += `
+                        <span class="month-label">${monthsFull[m].substring(0,2).toUpperCase()}</span>
+                        <span class="day-number">${d}</span>
+                        <span class="weekday-label">${weekdaysFull[dateObj.getDay()]}</span>
+                        <span class="note-indicator"></span>
+                    `;
+                    cell.onclick = () => openModal(dateId, d, monthsFull[m]);
+                    container.appendChild(cell);
+                }
+            }
+        }
+
+        let currentId = null;
+        let selectedColor = 'default';
+        const hoursList = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"];
+        
+        function generateHourlyInputs() {
+            const cont = document.getElementById('hourly-container');
+            cont.innerHTML = '';
+            hoursList.forEach(h => {
+                cont.innerHTML += `<div class="hour-row"><div class="hour-label">${h}</div><input type="text" class="hour-input" data-hour="${h}"></div>`;
+            });
+        }
+        generateHourlyInputs();
+
+        function openModal(id, day, month) {
+            currentId = id;
+            document.getElementById('modalTitle').innerText = `${day} de ${month}`;
+            const data = eventsData[id] || { text: '', color: 'default', schedule: {} };
+            document.getElementById('noteText').value = data.text || '';
+            selectColor(data.color || 'default');
+            document.querySelectorAll('.hour-input').forEach(inp => inp.value = (data.schedule && data.schedule[inp.dataset.hour]) || '');
+            document.getElementById('noteModal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('noteModal').style.display = 'none'; }
+
+        async function saveData() {
+            const btn = document.getElementById('btnGuardar');
+            const originalText = btn.innerText;
+            btn.innerText = "Sincronizando...";
+            btn.disabled = true;
+
+            const scheduleObj = {};
+            document.querySelectorAll('.hour-input').forEach(inp => { if(inp.value.trim()) scheduleObj[inp.dataset.hour] = inp.value.trim(); });
+
+            const dataObj = { 
+                text: document.getElementById('noteText').value.trim(), 
+                color: selectedColor, 
+                schedule: scheduleObj 
+            };
+
+            // Guardar en Supabase (Limpia anterior e inserta nuevo)
+            await _supabase.from('Calendario').delete().eq('fecha', currentId);
+            
+            if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
+                const { error } = await _supabase.from('Calendario').insert([{ fecha: currentId, otros: JSON.stringify(dataObj) }]);
+                if (error) alert("Error al sincronizar: " + error.message);
+                eventsData[currentId] = dataObj;
+            } else {
+                delete eventsData[currentId];
+            }
+
+            generarCalendario();
+            updateStats();
+            btn.innerText = originalText;
+            btn.disabled = false;
+            closeModal();
+        }
+
+        document.getElementById('btnGuardar').onclick = saveData;
+
+        function selectColor(c) {
+            selectedColor = c;
+            document.querySelectorAll('.color-dot').forEach(d => {
+                const isThis = d.getAttribute('onclick').includes(`'${c}'`);
+                d.classList.toggle('selected', isThis);
+            });
+        }
+
+        function toggleSchedule() {
+            const c = document.getElementById('hourly-container');
+            const a = document.getElementById('arrow-icon');
+            const isVisible = c.style.display === 'flex';
+            c.style.display = isVisible ? 'none' : 'flex';
+            a.innerText = isVisible ? '▼' : '▲';
+        }
+
+        function updateStats() {
+            const totalDays = 365;
+            const start = new Date(currentYear, 0, 1);
+            const today = new Date();
+            const diff = today - start;
+            let dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
+            if (dayOfYear < 0) dayOfYear = 0; if (dayOfYear > 365) dayOfYear = 365;
+            document.getElementById('progress-percent').innerText = `${((dayOfYear/totalDays)*100).toFixed(1)}%`;
+            document.getElementById('days-left').innerText = Math.max(0, totalDays - dayOfYear);
+            document.getElementById('red-counter-val').innerText = Object.keys(holidays2026).length;
+        }
+
+        init();
+    </script>
+</body>
+</html>
