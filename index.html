@@ -21,26 +21,17 @@
         .stat-box { display: flex; flex-direction: column; align-items: flex-end; }
         .stat-value { font-weight: bold; font-size: 1.1rem; color: #2196f3; }
         #calendar-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); width: 100%; height: calc(100vh - 61px); overflow-y: auto; border-left: 1px solid var(--border-color); }
-        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; transition: transform 0.1s; }
-        .day-box:active { transform: scale(0.98); }
+        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; }
         
-        /* Estilo para días seleccionados en bloque */
-        .selected-block { outline: 3px solid #2196f3 !important; outline-offset: -3px; z-index: 5; }
+        /* Resaltado de selección múltiple */
+        .selected-block { outline: 3px solid #2196f3 !important; outline-offset: -3px; z-index: 5; background-color: var(--hover-bg) !important; }
 
         .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
         .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
-        
         .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); transition: bottom 0.2s; }
         .is-official-holiday .weekday-label { bottom: 18px; font-size: 0.65rem; opacity: 0.7; }
-
         .is-official-holiday { background-color: var(--c-auto-holiday); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px); }
-        
-        .holiday-name { 
-            position: absolute; bottom: 2px; left: 0; width: 100%; 
-            font-size: 0.55rem; color: var(--t-auto-holiday); font-weight: bold; 
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; 
-        }
-
+        .holiday-name { position: absolute; bottom: 2px; left: 0; width: 100%; font-size: 0.55rem; color: var(--t-auto-holiday); font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
         .is-today { box-shadow: inset 0 0 0 3px var(--today-border) !important; }
         .note-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background-color: var(--has-note-color); border-radius: 50%; display: none; }
         .has-note .note-indicator { display: block; }
@@ -70,12 +61,12 @@
     <header>
         <div class="header-left">
             <h1 id="year-header">2026</h1>
-            <span>Zaragoza Sync (Shift + Clic para selección múltiple)</span>
+            <span id="selection-info" style="color: #2196f3; font-weight: bold;"></span>
         </div>
         <div class="stats-panel">
             <div class="stat-box"><span class="stat-value" id="progress-percent">0%</span><span class="stat-label">Completado</span></div>
             <div class="stat-box"><span class="stat-value" id="days-left">0</span><span class="stat-label">Días Restantes</span></div>
-            <div class="stat-box"><span class="stat-value" id="red-counter-val">0</span><span class="stat-label">Festivos Oficiales</span></div>
+            <div class="stat-box"><span class="stat-value" id="red-counter-val">0</span><span class="stat-label">Festivos</span></div>
         </div>
     </header>
 
@@ -83,7 +74,7 @@
 
     <div class="modal-overlay" id="noteModal">
         <div class="modal-box">
-            <h3 id="modalTitle" style="margin-top:0; text-align: center;">Editar Días</h3>
+            <h3 id="modalTitle" style="margin-top:0; text-align: center;">Editar</h3>
             <div class="color-selector">
                 <div class="color-dot" style="background: var(--c-default);" onclick="selectColor('default')">X</div>
                 <div class="color-dot" style="background: var(--c-festivo);" onclick="selectColor('festivo')"></div>
@@ -91,7 +82,7 @@
                 <div class="color-dot" style="background: var(--c-personal);" onclick="selectColor('personal')"></div>
                 <div class="color-dot" style="background: var(--c-trabajo);" onclick="selectColor('trabajo')"></div>
             </div>
-            <textarea id="noteText" placeholder="Nota para todos los días seleccionados..."></textarea>
+            <textarea id="noteText" placeholder="Nota en bloque..."></textarea>
             <button class="agenda-toggle" onclick="toggleSchedule()"><span>🕒 Agenda Detallada</span><span id="arrow-icon">▼</span></button>
             <div id="hourly-container"></div>
             <div class="modal-buttons">
@@ -112,7 +103,7 @@
         const currentYear = 2026;
         let eventsData = {}; 
 
-        // Variables para selección múltiple
+        // NUEVA LÓGICA DE SELECCIÓN
         let selectedDays = [];
         let isShiftPressed = false;
 
@@ -131,11 +122,9 @@
             try {
                 const { data, error } = await _supabase.from('Calendario').select('*');
                 if (data) {
-                    data.forEach(row => {
-                        eventsData[row.fecha] = JSON.parse(row.otros);
-                    });
+                    data.forEach(row => { eventsData[row.fecha] = JSON.parse(row.otros); });
                 }
-            } catch (err) { console.error("Error cargando datos:", err); }
+            } catch (err) { console.error(err); }
         }
 
         function generarCalendario() {
@@ -143,8 +132,8 @@
             for (let m = 0; m < 12; m++) {
                 const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
                 for (let d = 1; d <= daysInMonth; d++) {
-                    const dateObj = new Date(currentYear, m, d);
                     const dateId = `${currentYear}-${m}-${d}`;
+                    const dateObj = new Date(currentYear, m, d);
                     const cell = document.createElement('div');
                     cell.className = 'day-box';
                     cell.id = dateId;
@@ -157,9 +146,7 @@
                     const data = eventsData[dateId] || { color: 'default', text: '', schedule: {} };
                     if (data.color !== 'default') cell.classList.add(`bg-${data.color}`);
                     if (data.text || (data.schedule && Object.keys(data.schedule).length > 0)) cell.classList.add('has-note');
-                    
-                    const today = new Date();
-                    if (d === today.getDate() && m === today.getMonth() && currentYear === today.getFullYear()) cell.classList.add('is-today');
+                    if (d === new Date().getDate() && m === new Date().getMonth()) cell.classList.add('is-today');
 
                     cell.innerHTML += `
                         <span class="month-label">${monthsFull[m].substring(0,2).toUpperCase()}</span>
@@ -168,15 +155,17 @@
                         <span class="note-indicator"></span>
                     `;
                     
-                    cell.onclick = (e) => manejarClicDia(dateId, d, monthsFull[m]);
+                    cell.onclick = (e) => manejarClic(dateId, d, monthsFull[m]);
                     container.appendChild(cell);
                 }
             }
         }
 
-        function manejarClicDia(id, d, m) {
+        function manejarClic(id, d, m) {
             const el = document.getElementById(id);
+            
             if (isShiftPressed) {
+                // MODO SELECCIÓN: Añadir o quitar de la lista
                 if (selectedDays.includes(id)) {
                     selectedDays = selectedDays.filter(item => item !== id);
                     el.classList.remove('selected-block');
@@ -184,12 +173,22 @@
                     selectedDays.push(id);
                     el.classList.add('selected-block');
                 }
+                actualizarInfoSeleccion();
             } else {
-                // Si no hay shift, limpiamos selección previa y abrimos ese día
-                limpiarSeleccionVisual();
-                selectedDays = [id];
+                // MODO ACCIÓN: Si hay varios seleccionados, abre el modal para todos.
+                // Si no hay ninguno seleccionado, selecciona solo este y abre.
+                if (selectedDays.length === 0 || !selectedDays.includes(id)) {
+                    limpiarSeleccionVisual();
+                    selectedDays = [id];
+                    el.classList.add('selected-block');
+                }
                 openModal(id, d, m);
             }
+        }
+
+        function actualizarInfoSeleccion() {
+            const info = document.getElementById('selection-info');
+            info.innerText = selectedDays.length > 0 ? `[${selectedDays.length} días seleccionados]` : "";
         }
 
         function limpiarSeleccionVisual() {
@@ -198,6 +197,7 @@
                 if(el) el.classList.remove('selected-block');
             });
             selectedDays = [];
+            actualizarInfoSeleccion();
         }
 
         let selectedColor = 'default';
@@ -214,9 +214,8 @@
 
         function openModal(id, day, month) {
             const isMultiple = selectedDays.length > 1;
-            document.getElementById('modalTitle').innerText = isMultiple ? `Editando ${selectedDays.length} días` : `${day} de ${month}`;
+            document.getElementById('modalTitle').innerText = isMultiple ? `Editar ${selectedDays.length} días` : `${day} de ${month}`;
             
-            // Cargar datos del primer día seleccionado (o vacío si es múltiple)
             const data = isMultiple ? { text: '', color: 'default', schedule: {} } : (eventsData[id] || { text: '', color: 'default', schedule: {} });
             
             document.getElementById('noteText').value = data.text || '';
@@ -232,8 +231,7 @@
 
         async function saveData() {
             const btn = document.getElementById('btnGuardar');
-            const originalText = btn.innerText;
-            btn.innerText = "Sincronizando bloque...";
+            btn.innerText = "Guardando...";
             btn.disabled = true;
 
             const scheduleObj = {};
@@ -245,10 +243,8 @@
                 schedule: scheduleObj 
             };
 
-            // Ejecutar para todos los días seleccionados
             for (const dayId of selectedDays) {
                 await _supabase.from('Calendario').delete().eq('fecha', dayId);
-                
                 if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
                     await _supabase.from('Calendario').insert([{ fecha: dayId, otros: JSON.stringify(dataObj) }]);
                     eventsData[dayId] = dataObj;
@@ -259,7 +255,7 @@
 
             generarCalendario();
             updateStats();
-            btn.innerText = originalText;
+            btn.innerText = "Guardar en Nube";
             btn.disabled = false;
             closeModal();
         }
@@ -284,13 +280,12 @@
 
         function updateStats() {
             const totalDays = 365;
-            const start = new Date(currentYear, 0, 1);
             const today = new Date();
-            const diff = today - start;
-            let dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-            if (dayOfYear < 0) dayOfYear = 0; if (dayOfYear > 365) dayOfYear = 365;
+            const start = new Date(currentYear, 0, 1);
+            let dayOfYear = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
+            dayOfYear = Math.max(0, Math.min(365, dayOfYear));
             document.getElementById('progress-percent').innerText = `${((dayOfYear/totalDays)*100).toFixed(1)}%`;
-            document.getElementById('days-left').innerText = Math.max(0, totalDays - dayOfYear);
+            document.getElementById('days-left').innerText = totalDays - dayOfYear;
             document.getElementById('red-counter-val').innerText = Object.keys(holidays2026).length;
         }
 
