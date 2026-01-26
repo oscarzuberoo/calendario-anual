@@ -175,7 +175,28 @@
             document.querySelectorAll('.hour-input').forEach(inp => inp.value = (data.schedule && data.schedule[inp.dataset.hour]) || '');
             document.getElementById('noteModal').style.display = 'flex';
         }
+/* --- PEGA ESTO AQUÍ --- */
+        /* Ajuste para que la inicial del día no choque con el festivo */
+        .is-official-holiday .weekday-label {
+            bottom: 18px !important; /* Sube la letra del día (L, M, X...) */
+            font-size: 0.65rem;
+            opacity: 0.7;
+        }
 
+        .holiday-name {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 100%;
+            font-size: 0.55rem; /* Un pelín más pequeño para que no sature */
+            color: var(--t-auto-holiday);
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+        /* ----------------------- */
         function closeModal() { document.getElementById('noteModal').style.display = 'none'; }
 
         async function saveData() {
