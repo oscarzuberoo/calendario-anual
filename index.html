@@ -10,57 +10,381 @@
             --bg-color: #ffffff; --text-color: #333; --border-color: #d0d0d0;
             --hover-bg: #f0f8ff; --today-bg: #e3f2fd; --today-border: #2196f3;
             --has-note-color: #ff9800;
-            --c-default: #ffffff; --c-festivo: #ffcdd2; --c-viaje: #c8e6c9;   
-            --c-personal: #bbdefb; --c-trabajo: #fff9c4; 
+            --c-default: #ffffff; --c-festivo: #ffcdd2; --c-viaje: #c8e6c9;
+            --c-personal: #bbdefb; --c-trabajo: #fff9c4;
             --c-auto-holiday: #ffebee; --t-auto-holiday: #c62828;
         }
-        body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Arial; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-        header { padding: 0 20px; background: #f8f9fa; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; height: 60px; }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Arial;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--bg-color);
+        }
+
+        header {
+            padding: 0 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+            flex-shrink: 0;
+        }
+
         .header-left h1 { margin: 0; font-size: 1.4rem; color: #444; }
         .stats-panel { display: flex; gap: 15px; text-align: right; font-size: 0.85rem; align-items: center; }
         .stat-box { display: flex; flex-direction: column; align-items: flex-end; }
         .stat-value { font-weight: bold; font-size: 1.1rem; color: #2196f3; }
-        
-        /* Botón de limpiar selección */
-        #clear-btn { background: #ff5252; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer; display: none; font-size: 0.75rem; }
 
-        #calendar-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); width: 100%; height: calc(100vh - 61px); overflow-y: auto; border-left: 1px solid var(--border-color); }
-        .day-box { position: relative; background-color: var(--c-default); border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); min-height: 65px; cursor: pointer; user-select: none; }
-        
-        /* Resaltado de selección mejorado */
-        .selected-block { outline: 4px solid #2196f3 !important; outline-offset: -4px; z-index: 10; background-color: #e3f2fd !important; }
+        #clear-btn {
+            background: #ff5252;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: none;
+            font-size: 0.75rem;
+        }
+
+        #main-layout {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 61px);
+            min-height: 0;
+        }
+
+        #calendar-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            width: calc(100% - 340px);
+            height: 100%;
+            overflow-y: auto;
+            border-left: 1px solid var(--border-color);
+        }
+
+        .day-box {
+            position: relative;
+            background-color: var(--c-default);
+            border-right: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            min-height: 65px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .selected-block {
+            outline: 4px solid #2196f3 !important;
+            outline-offset: -4px;
+            z-index: 10;
+            background-color: #e3f2fd !important;
+        }
 
         .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
         .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
         .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); }
         .is-official-holiday .weekday-label { bottom: 18px; font-size: 0.65rem; }
-        .is-official-holiday { background-color: var(--c-auto-holiday); background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px); }
-        .holiday-name { position: absolute; bottom: 2px; left: 0; width: 100%; font-size: 0.55rem; color: var(--t-auto-holiday); font-weight: bold; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .is-official-holiday {
+            background-color: var(--c-auto-holiday);
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px);
+        }
+        .holiday-name {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 100%;
+            font-size: 0.55rem;
+            color: var(--t-auto-holiday);
+            font-weight: bold;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .is-today { box-shadow: inset 0 0 0 3px var(--today-border) !important; }
-        .note-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 6px; height: 6px; background-color: var(--has-note-color); border-radius: 50%; display: none; }
+        .note-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px;
+            height: 6px;
+            background-color: var(--has-note-color);
+            border-radius: 50%;
+            display: none;
+        }
         .has-note .note-indicator { display: block; }
-        
-        /* Colores de fondo */
+
         .bg-festivo { background-color: var(--c-festivo) !important; }
         .bg-viaje { background-color: var(--c-viaje) !important; }
         .bg-personal { background-color: var(--c-personal) !important; }
         .bg-trabajo { background-color: var(--c-trabajo) !important; }
 
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 100; justify-content: center; align-items: center; }
-        .modal-box { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+
         .color-selector { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
-        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid #ddd; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+        .color-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
         .color-dot.selected { border-color: #333; transform: scale(1.15); }
-        #noteText { width: 100%; height: 80px; margin-bottom: 10px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: none; }
-        .agenda-toggle { background: #f1f3f4; border: 1px solid #ccc; padding: 8px; width: 100%; text-align: left; cursor: pointer; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        #hourly-container { display: none; flex-direction: column; gap: 5px; overflow-y: auto; margin-bottom: 10px; border-top: 1px solid #eee; padding-top: 10px; flex-grow: 1; }
+
+        #noteText {
+            width: 100%;
+            height: 80px;
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: none;
+        }
+
+        .agenda-toggle {
+            background: #f1f3f4;
+            border: 1px solid #ccc;
+            padding: 8px;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #hourly-container {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+            flex-grow: 1;
+        }
+
         .hour-row { display: flex; align-items: center; gap: 10px; }
         .hour-label { width: 50px; font-size: 0.8rem; color: #666; font-weight: bold; }
         .hour-input { flex-grow: 1; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
-        .modal-buttons { margin-top: auto; padding-top: 10px;}
+        .modal-buttons { margin-top: auto; padding-top: 10px; }
         button { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
         .btn-save { background: #2196f3; color: white; float: right; }
-        .btn-cancel { background: #ddd; color: #333; float: right; margin-right: 10px;}
+        .btn-cancel { background: #ddd; color: #333; float: right; margin-right: 10px; }
+
+        /* TO DO PANEL */
+        #todo-panel {
+            width: 340px;
+            height: 100%;
+            border-left: 1px solid var(--border-color);
+            background: #fbfcfe;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .todo-panel-header {
+            padding: 16px 16px 12px 16px;
+            border-bottom: 1px solid #e6ebf2;
+            background: white;
+        }
+
+        .todo-panel-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #333;
+        }
+
+        .todo-panel-header p {
+            margin: 4px 0 0 0;
+            font-size: 0.82rem;
+            color: #7b8794;
+        }
+
+        .todo-input-row {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 1px solid #e6ebf2;
+        }
+
+        #todoInput {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #d9e1ea;
+            border-radius: 10px;
+            outline: none;
+            font-size: 0.92rem;
+        }
+
+        #todoInput:focus {
+            border-color: #2196f3;
+            box-shadow: 0 0 0 3px rgba(33,150,243,0.10);
+        }
+
+        #addTodoBtn {
+            min-width: 44px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .todo-filters {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            background: white;
+            border-bottom: 1px solid #e6ebf2;
+            flex-wrap: wrap;
+        }
+
+        .todo-filter {
+            background: #eef4fb;
+            color: #3c4b5f;
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .todo-filter.active {
+            background: #2196f3;
+            color: white;
+        }
+
+        .todo-summary {
+            padding: 10px 16px;
+            font-size: 0.83rem;
+            color: #6b7785;
+            border-bottom: 1px solid #e6ebf2;
+            background: #f8fbff;
+            font-weight: 600;
+        }
+
+        #todoList {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #e6ebf2;
+            border-radius: 12px;
+            padding: 12px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .todo-item.done .todo-text {
+            text-decoration: line-through;
+            opacity: 0.55;
+        }
+
+        .todo-check {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 0.92rem;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+
+        .todo-delete {
+            background: #ffebee;
+            color: #c62828;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .todo-empty {
+            color: #7c8794;
+            text-align: center;
+            padding: 20px 10px;
+            font-size: 0.92rem;
+        }
+
+        @media (max-width: 1100px) {
+            body {
+                overflow: auto;
+                height: auto;
+            }
+
+            #main-layout {
+                flex-direction: column;
+                height: auto;
+            }
+
+            #calendar-container {
+                width: 100%;
+                height: auto;
+                min-height: 60vh;
+            }
+
+            #todo-panel {
+                width: 100%;
+                height: auto;
+                min-height: 320px;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+        }
     </style>
 </head>
 <body>
@@ -77,7 +401,31 @@
         </div>
     </header>
 
-    <div id="calendar-container"></div>
+    <div id="main-layout">
+        <div id="calendar-container"></div>
+
+        <div id="todo-panel">
+            <div class="todo-panel-header">
+                <h3>To Do</h3>
+                <p>Lista rápida y visual</p>
+            </div>
+
+            <div class="todo-input-row">
+                <input type="text" id="todoInput" placeholder="Nueva tarea...">
+                <button id="addTodoBtn">+</button>
+            </div>
+
+            <div class="todo-filters">
+                <button class="todo-filter active" data-filter="all">Todas</button>
+                <button class="todo-filter" data-filter="pending">Pendientes</button>
+                <button class="todo-filter" data-filter="done">Hechas</button>
+            </div>
+
+            <div class="todo-summary" id="todoSummary">0 pendientes</div>
+
+            <div id="todoList"></div>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="noteModal">
         <div class="modal-box">
@@ -108,28 +456,45 @@
         const monthsFull = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
         const weekdaysFull = ["D", "L", "M", "X", "J", "V", "S"];
         const currentYear = 2026;
-        let eventsData = {}; 
+        let eventsData = {};
+
+        let todos = JSON.parse(localStorage.getItem('todos_simple_visual') || '[]');
+        let currentTodoFilter = 'all';
 
         let selectedDays = [];
         let isShiftPressed = false;
 
-        // Rastreo de teclado
         window.addEventListener('keydown', (e) => { if (e.key === "Shift") isShiftPressed = true; });
         window.addEventListener('keyup', (e) => { if (e.key === "Shift") isShiftPressed = false; });
 
-        const holidays2026 = { "0-1":"Año Nuevo","0-6":"Reyes","0-29":"San Valero","2-5":"Cincomarzada","3-2":"Jueves Santo","3-3":"Viernes Santo","3-23":"San Jorge","4-1":"Día del Trabajo","7-15":"Asunción","9-12":"El Pilar","10-1":"Todos los Santos","11-6":"Constitución","11-8":"Inmaculada","11-25":"Navidad" };
+        const holidays2026 = {
+            "0-1":"Año Nuevo","0-6":"Reyes","0-29":"San Valero","2-5":"Cincomarzada","3-2":"Jueves Santo","3-3":"Viernes Santo",
+            "3-23":"San Jorge","4-1":"Día del Trabajo","7-15":"Asunción","9-12":"El Pilar","10-1":"Todos los Santos",
+            "11-6":"Constitución","11-8":"Inmaculada","11-25":"Navidad"
+        };
 
         async function init() {
             await cargarDatosDesdeNube();
             generarCalendario();
             updateStats();
+            initTodo();
         }
 
         async function cargarDatosDesdeNube() {
             try {
                 const { data, error } = await _supabase.from('Calendario').select('*');
-                if (data) { data.forEach(row => { eventsData[row.fecha] = JSON.parse(row.otros); }); }
-            } catch (err) { console.error(err); }
+                if (error) {
+                    console.error(error);
+                    return;
+                }
+                if (data) {
+                    data.forEach(row => {
+                        eventsData[row.fecha] = JSON.parse(row.otros);
+                    });
+                }
+            } catch (err) {
+                console.error(err);
+            }
         }
 
         function generarCalendario() {
@@ -151,8 +516,15 @@
                     const data = eventsData[dateId] || { color: 'default', text: '', schedule: {} };
                     if (data.color && data.color !== 'default') cell.classList.add(`bg-${data.color}`);
                     if (data.text || (data.schedule && Object.keys(data.schedule).length > 0)) cell.classList.add('has-note');
-                    
-                    if (d === new Date().getDate() && m === new Date().getMonth()) cell.classList.add('is-today');
+
+                    const now = new Date();
+                    if (
+                        d === now.getDate() &&
+                        m === now.getMonth() &&
+                        currentYear === now.getFullYear()
+                    ) {
+                        cell.classList.add('is-today');
+                    }
 
                     cell.innerHTML += `
                         <span class="month-label">${monthsFull[m].substring(0,2).toUpperCase()}</span>
@@ -160,7 +532,7 @@
                         <span class="weekday-label">${weekdaysFull[dateObj.getDay()]}</span>
                         <span class="note-indicator"></span>
                     `;
-                    
+
                     cell.onclick = (e) => manejarClic(e, dateId, d, monthsFull[m]);
                     container.appendChild(cell);
                 }
@@ -171,7 +543,6 @@
             const el = document.getElementById(id);
 
             if (isShiftPressed) {
-                // Modo SELECCIÓN (Shift pulsado)
                 if (selectedDays.includes(id)) {
                     selectedDays = selectedDays.filter(item => item !== id);
                     el.classList.remove('selected-block');
@@ -181,9 +552,6 @@
                 }
                 actualizarUISeleccion();
             } else {
-                // Modo ACCIÓN (Shift suelto)
-                // Si el día clicado ya estaba en la selección múltiple, abrimos todos.
-                // Si no, borramos selección anterior y abrimos solo este.
                 if (!selectedDays.includes(id)) {
                     limpiarSeleccionVisual();
                     selectedDays = [id];
@@ -208,7 +576,7 @@
         function limpiarSeleccionVisual() {
             selectedDays.forEach(id => {
                 const el = document.getElementById(id);
-                if(el) el.classList.remove('selected-block');
+                if (el) el.classList.remove('selected-block');
             });
             selectedDays = [];
             actualizarUISeleccion();
@@ -216,7 +584,7 @@
 
         let selectedColor = 'default';
         const hoursList = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"];
-        
+
         function generateHourlyInputs() {
             const cont = document.getElementById('hourly-container');
             cont.innerHTML = '';
@@ -229,10 +597,11 @@
         function openModal(id, day, month) {
             const isMultiple = selectedDays.length > 1;
             document.getElementById('modalTitle').innerText = isMultiple ? `Editando ${selectedDays.length} días` : `${day} de ${month}`;
-            
-            // Si es individual, cargamos sus datos. Si es múltiple, empezamos en blanco.
-            const data = isMultiple ? { text: '', color: 'default', schedule: {} } : (eventsData[id] || { text: '', color: 'default', schedule: {} });
-            
+
+            const data = isMultiple
+                ? { text: '', color: 'default', schedule: {} }
+                : (eventsData[id] || { text: '', color: 'default', schedule: {} });
+
             document.getElementById('noteText').value = data.text || '';
             selectColor(data.color || 'default');
             document.querySelectorAll('.hour-input').forEach(inp => {
@@ -241,8 +610,8 @@
             document.getElementById('noteModal').style.display = 'flex';
         }
 
-        function closeModal() { 
-            document.getElementById('noteModal').style.display = 'none'; 
+        function closeModal() {
+            document.getElementById('noteModal').style.display = 'none';
             limpiarSeleccionVisual();
         }
 
@@ -252,29 +621,38 @@
             btn.disabled = true;
 
             const scheduleObj = {};
-            document.querySelectorAll('.hour-input').forEach(inp => { if(inp.value.trim()) scheduleObj[inp.dataset.hour] = inp.value.trim(); });
+            document.querySelectorAll('.hour-input').forEach(inp => {
+                if (inp.value.trim()) scheduleObj[inp.dataset.hour] = inp.value.trim();
+            });
 
-            const dataObj = { 
-                text: document.getElementById('noteText').value.trim(), 
-                color: selectedColor, 
-                schedule: scheduleObj 
+            const dataObj = {
+                text: document.getElementById('noteText').value.trim(),
+                color: selectedColor,
+                schedule: scheduleObj
             };
 
-            for (const dayId of selectedDays) {
-                await _supabase.from('Calendario').delete().eq('fecha', dayId);
-                if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
-                    await _supabase.from('Calendario').insert([{ fecha: dayId, otros: JSON.stringify(dataObj) }]);
-                    eventsData[dayId] = dataObj;
-                } else {
-                    delete eventsData[dayId];
-                }
-            }
+            try {
+                for (const dayId of selectedDays) {
+                    await _supabase.from('Calendario').delete().eq('fecha', dayId);
 
-            generarCalendario();
-            updateStats();
-            btn.innerText = "Guardar en Nube";
-            btn.disabled = false;
-            closeModal();
+                    if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
+                        await _supabase.from('Calendario').insert([{ fecha: dayId, otros: JSON.stringify(dataObj) }]);
+                        eventsData[dayId] = dataObj;
+                    } else {
+                        delete eventsData[dayId];
+                    }
+                }
+
+                generarCalendario();
+                updateStats();
+                closeModal();
+            } catch (err) {
+                console.error(err);
+                alert('Ha ocurrido un error al guardar.');
+            } finally {
+                btn.innerText = "Guardar en Nube";
+                btn.disabled = false;
+            }
         }
 
         document.getElementById('btnGuardar').onclick = saveData;
@@ -282,7 +660,8 @@
         function selectColor(c) {
             selectedColor = c;
             document.querySelectorAll('.color-dot').forEach(d => {
-                const isSelected = d.getAttribute('onclick').includes(`'${c}'`);
+                const onclickAttr = d.getAttribute('onclick') || '';
+                const isSelected = onclickAttr.includes(`'${c}'`);
                 d.classList.toggle('selected', isSelected);
             });
         }
@@ -301,8 +680,118 @@
             const start = new Date(currentYear, 0, 1);
             let dayOfYear = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
             dayOfYear = Math.max(0, Math.min(365, dayOfYear));
-            document.getElementById('progress-percent').innerText = `${((dayOfYear/totalDays)*100).toFixed(1)}%`;
+            document.getElementById('progress-percent').innerText = `${((dayOfYear / totalDays) * 100).toFixed(1)}%`;
             document.getElementById('red-counter-val').innerText = Object.keys(holidays2026).length;
+        }
+
+        /* TO DO */
+        function saveTodos() {
+            localStorage.setItem('todos_simple_visual', JSON.stringify(todos));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            todos.unshift({
+                id: Date.now(),
+                text: text,
+                done: false
+            });
+
+            input.value = '';
+            saveTodos();
+            renderTodos();
+        }
+
+        function toggleTodo(id) {
+            todos = todos.map(todo =>
+                todo.id === id ? { ...todo, done: !todo.done } : todo
+            );
+            saveTodos();
+            renderTodos();
+        }
+
+        function deleteTodo(id) {
+            todos = todos.filter(todo => todo.id !== id);
+            saveTodos();
+            renderTodos();
+        }
+
+        function getFilteredTodos() {
+            if (currentTodoFilter === 'pending') return todos.filter(t => !t.done);
+            if (currentTodoFilter === 'done') return todos.filter(t => t.done);
+            return todos;
+        }
+
+        function updateTodoSummary() {
+            const pending = todos.filter(t => !t.done).length;
+            const summary = document.getElementById('todoSummary');
+            summary.innerText = `${pending} pendiente${pending === 1 ? '' : 's'}`;
+        }
+
+        function renderTodos() {
+            const list = document.getElementById('todoList');
+            if (!list) return;
+
+            const filtered = getFilteredTodos();
+            list.innerHTML = '';
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="todo-empty">No hay tareas en esta vista</div>';
+                updateTodoSummary();
+                return;
+            }
+
+            filtered.forEach(todo => {
+                const item = document.createElement('div');
+                item.className = `todo-item ${todo.done ? 'done' : ''}`;
+
+                item.innerHTML = `
+                    <input class="todo-check" type="checkbox" ${todo.done ? 'checked' : ''}>
+                    <div class="todo-text">${escapeHtml(todo.text)}</div>
+                    <button class="todo-delete">X</button>
+                `;
+
+                item.querySelector('.todo-check').addEventListener('change', () => toggleTodo(todo.id));
+                item.querySelector('.todo-delete').addEventListener('click', () => deleteTodo(todo.id));
+
+                list.appendChild(item);
+            });
+
+            updateTodoSummary();
+        }
+
+        function initTodo() {
+            const addBtn = document.getElementById('addTodoBtn');
+            const input = document.getElementById('todoInput');
+            const filters = document.querySelectorAll('.todo-filter');
+
+            if (addBtn) addBtn.addEventListener('click', addTodo);
+
+            if (input) {
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') addTodo();
+                });
+            }
+
+            filters.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentTodoFilter = btn.dataset.filter;
+                    filters.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    renderTodos();
+                });
+            });
+
+            renderTodos();
         }
 
         init();
