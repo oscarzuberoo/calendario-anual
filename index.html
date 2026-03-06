@@ -7,25 +7,41 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
-            --bg-color: #ffffff; --text-color: #333; --border-color: #d0d0d0;
-            --hover-bg: #f0f8ff; --today-bg: #e3f2fd; --today-border: #2196f3;
+            --bg-color: #ffffff;
+            --text-color: #333;
+            --border-color: #d0d0d0;
+            --hover-bg: #f0f8ff;
+            --today-bg: #e3f2fd;
+            --today-border: #2196f3;
             --has-note-color: #ff9800;
-            --c-default: #ffffff; --c-festivo: #ffcdd2; --c-viaje: #c8e6c9;
-            --c-personal: #bbdefb; --c-trabajo: #fff9c4;
-            --c-auto-holiday: #ffebee; --t-auto-holiday: #c62828;
+            --c-default: #ffffff;
+            --c-festivo: #ffcdd2;
+            --c-viaje: #c8e6c9;
+            --c-personal: #bbdefb;
+            --c-trabajo: #fff9c4;
+            --c-auto-holiday: #ffebee;
+            --t-auto-holiday: #c62828;
+            --primary: #2196f3;
+            --primary-dark: #1976d2;
+            --danger: #e53935;
+            --success: #43a047;
+            --panel-shadow: 0 16px 40px rgba(0,0,0,0.18);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Roboto, Arial;
+            font-family: 'Segoe UI', Roboto, Arial, sans-serif;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
             background: var(--bg-color);
+            color: var(--text-color);
         }
 
         header {
@@ -39,10 +55,31 @@
             flex-shrink: 0;
         }
 
-        .header-left h1 { margin: 0; font-size: 1.4rem; color: #444; }
-        .stats-panel { display: flex; gap: 15px; text-align: right; font-size: 0.85rem; align-items: center; }
-        .stat-box { display: flex; flex-direction: column; align-items: flex-end; }
-        .stat-value { font-weight: bold; font-size: 1.1rem; color: #2196f3; }
+        .header-left h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #444;
+        }
+
+        .stats-panel {
+            display: flex;
+            gap: 15px;
+            text-align: right;
+            font-size: 0.85rem;
+            align-items: center;
+        }
+
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #2196f3;
+        }
 
         #clear-btn {
             background: #ff5252;
@@ -54,18 +91,11 @@
             font-size: 0.75rem;
         }
 
-        #main-layout {
-            display: flex;
-            width: 100%;
-            height: calc(100vh - 61px);
-            min-height: 0;
-        }
-
         #calendar-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-            width: calc(100% - 340px);
-            height: 100%;
+            width: 100%;
+            height: calc(100vh - 61px);
             overflow-y: auto;
             border-left: 1px solid var(--border-color);
         }
@@ -78,6 +108,11 @@
             min-height: 65px;
             cursor: pointer;
             user-select: none;
+            transition: background-color 0.15s ease;
+        }
+
+        .day-box:hover {
+            background-color: var(--hover-bg);
         }
 
         .selected-block {
@@ -87,14 +122,48 @@
             background-color: #e3f2fd !important;
         }
 
-        .month-label { position: absolute; top: 4px; left: 6px; font-size: 0.7rem; font-weight: bold; color: rgba(0,0,0,0.4); }
-        .day-number { position: absolute; top: 4px; right: 6px; font-size: 0.9rem; font-weight: 700; }
-        .weekday-label { position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); font-size: 0.75rem; color: rgba(0,0,0,0.5); }
-        .is-official-holiday .weekday-label { bottom: 18px; font-size: 0.65rem; }
+        .month-label {
+            position: absolute;
+            top: 4px;
+            left: 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: rgba(0,0,0,0.4);
+        }
+
+        .day-number {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        .weekday-label {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: rgba(0,0,0,0.5);
+        }
+
+        .is-official-holiday .weekday-label {
+            bottom: 18px;
+            font-size: 0.65rem;
+        }
+
         .is-official-holiday {
             background-color: var(--c-auto-holiday);
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,0.7) 10px, rgba(255,255,255,0.7) 20px);
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.7) 10px,
+                rgba(255,255,255,0.7) 20px
+            );
         }
+
         .holiday-name {
             position: absolute;
             bottom: 2px;
@@ -108,7 +177,11 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .is-today { box-shadow: inset 0 0 0 3px var(--today-border) !important; }
+
+        .is-today {
+            box-shadow: inset 0 0 0 3px var(--today-border) !important;
+        }
+
         .note-indicator {
             position: absolute;
             top: 50%;
@@ -120,7 +193,10 @@
             border-radius: 50%;
             display: none;
         }
-        .has-note .note-indicator { display: block; }
+
+        .has-note .note-indicator {
+            display: block;
+        }
 
         .bg-festivo { background-color: var(--c-festivo) !important; }
         .bg-viaje { background-color: var(--c-viaje) !important; }
@@ -135,7 +211,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.4);
-            z-index: 100;
+            z-index: 200;
             justify-content: center;
             align-items: center;
         }
@@ -151,7 +227,13 @@
             flex-direction: column;
         }
 
-        .color-selector { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .color-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+
         .color-dot {
             width: 32px;
             height: 32px;
@@ -163,7 +245,11 @@
             justify-content: center;
             font-size: 10px;
         }
-        .color-dot.selected { border-color: #333; transform: scale(1.15); }
+
+        .color-dot.selected {
+            border-color: #333;
+            transform: scale(1.15);
+        }
 
         #noteText {
             width: 100%;
@@ -173,6 +259,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
             resize: none;
+            font-family: inherit;
         }
 
         .agenda-toggle {
@@ -199,190 +286,364 @@
             flex-grow: 1;
         }
 
-        .hour-row { display: flex; align-items: center; gap: 10px; }
-        .hour-label { width: 50px; font-size: 0.8rem; color: #666; font-weight: bold; }
-        .hour-input { flex-grow: 1; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
-        .modal-buttons { margin-top: auto; padding-top: 10px; }
-        button { padding: 8px 16px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
-        .btn-save { background: #2196f3; color: white; float: right; }
-        .btn-cancel { background: #ddd; color: #333; float: right; margin-right: 10px; }
+        .hour-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        /* TO DO PANEL */
-        #todo-panel {
-            width: 340px;
-            height: 100%;
-            border-left: 1px solid var(--border-color);
-            background: #fbfcfe;
+        .hour-label {
+            width: 50px;
+            font-size: 0.8rem;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .hour-input {
+            flex-grow: 1;
+            padding: 5px;
+            border: 1px solid #eee;
+            border-radius: 3px;
+        }
+
+        .modal-buttons {
+            margin-top: auto;
+            padding-top: 10px;
+        }
+
+        button {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            border: none;
+            font-weight: bold;
+            font-family: inherit;
+        }
+
+        .btn-save {
+            background: #2196f3;
+            color: white;
+            float: right;
+        }
+
+        .btn-cancel {
+            background: #ddd;
+            color: #333;
+            float: right;
+            margin-right: 10px;
+        }
+
+        /* TO DO DESPLEGABLE */
+
+        #todo-toggle-btn {
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 10px 25px rgba(33,150,243,0.35);
+            z-index: 160;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        #todo-toggle-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        #todo-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.22);
+            z-index: 149;
+            display: none;
+        }
+
+        #todo-overlay.open {
+            display: block;
+        }
+
+        #todo-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 410px;
+            max-width: 92vw;
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: var(--panel-shadow);
+            z-index: 150;
+            transform: translateX(100%);
+            transition: transform 0.28s ease;
             display: flex;
             flex-direction: column;
-            flex-shrink: 0;
         }
 
-        .todo-panel-header {
-            padding: 16px 16px 12px 16px;
-            border-bottom: 1px solid #e6ebf2;
-            background: white;
+        #todo-drawer.open {
+            transform: translateX(0);
         }
 
-        .todo-panel-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: #333;
-        }
-
-        .todo-panel-header p {
-            margin: 4px 0 0 0;
-            font-size: 0.82rem;
-            color: #7b8794;
-        }
-
-        .todo-input-row {
+        .todo-drawer-header {
+            padding: 18px 18px 14px 18px;
+            border-bottom: 1px solid #e5e7eb;
             display: flex;
-            gap: 8px;
-            padding: 12px 16px;
-            background: white;
-            border-bottom: 1px solid #e6ebf2;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
         }
 
-        #todoInput {
-            flex: 1;
-            padding: 10px 12px;
-            border: 1px solid #d9e1ea;
+        .todo-drawer-header h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: #222;
+        }
+
+        .todo-drawer-header p {
+            margin: 4px 0 0;
+            font-size: 0.86rem;
+            color: #6b7280;
+        }
+
+        .todo-close-btn {
+            background: #eef2f7;
+            color: #334155;
             border-radius: 10px;
-            outline: none;
-            font-size: 0.92rem;
+            min-width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 20px;
         }
 
-        #todoInput:focus {
-            border-color: #2196f3;
+        .todo-form {
+            padding: 16px 18px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #fafcff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .todo-form input,
+        .todo-form textarea,
+        .todo-form select {
+            width: 100%;
+            border: 1px solid #d7dde5;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            font-family: inherit;
+            outline: none;
+            background: white;
+        }
+
+        .todo-form input:focus,
+        .todo-form textarea:focus,
+        .todo-form select:focus {
+            border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(33,150,243,0.10);
         }
 
-        #addTodoBtn {
-            min-width: 44px;
-            background: #2196f3;
+        .todo-form textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .todo-row-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .todo-add-btn {
+            background: var(--primary);
             color: white;
-            border: none;
             border-radius: 10px;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
+        }
+
+        .todo-add-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .todo-toolbar {
+            padding: 12px 18px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .todo-filters {
             display: flex;
             gap: 8px;
-            padding: 12px 16px;
-            background: white;
-            border-bottom: 1px solid #e6ebf2;
             flex-wrap: wrap;
         }
 
         .todo-filter {
             background: #eef4fb;
-            color: #3c4b5f;
-            border: none;
+            color: #334155;
             border-radius: 999px;
             padding: 7px 12px;
             font-size: 0.8rem;
-            cursor: pointer;
             font-weight: 600;
         }
 
         .todo-filter.active {
-            background: #2196f3;
+            background: var(--primary);
             color: white;
         }
 
         .todo-summary {
-            padding: 10px 16px;
-            font-size: 0.83rem;
-            color: #6b7785;
-            border-bottom: 1px solid #e6ebf2;
-            background: #f8fbff;
+            font-size: 0.84rem;
+            color: #64748b;
             font-weight: 600;
         }
 
-        #todoList {
+        .todo-list {
             flex: 1;
             overflow-y: auto;
-            padding: 12px;
+            padding: 14px 14px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f8fafc;
+        }
+
+        .todo-empty {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 18px;
+            text-align: center;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        .todo-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.04);
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
 
-        .todo-item {
+        .todo-card.done {
+            opacity: 0.78;
+            background: #f8fff8;
+        }
+
+        .todo-card-top {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 10px;
-            border: 1px solid #e6ebf2;
-            border-radius: 12px;
-            padding: 12px;
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
 
-        .todo-item.done .todo-text {
-            text-decoration: line-through;
-            opacity: 0.55;
-        }
-
-        .todo-check {
+        .todo-card-check {
             width: 18px;
             height: 18px;
+            margin-top: 2px;
             cursor: pointer;
             flex-shrink: 0;
         }
 
-        .todo-text {
+        .todo-card-main {
             flex: 1;
-            font-size: 0.92rem;
-            word-break: break-word;
-            line-height: 1.35;
+            min-width: 0;
         }
 
-        .todo-delete {
+        .todo-card-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .todo-card.done .todo-card-title {
+            text-decoration: line-through;
+            color: #6b7280;
+        }
+
+        .todo-card-date {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .todo-card-comments {
+            font-size: 0.88rem;
+            color: #4b5563;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            padding-left: 28px;
+        }
+
+        .todo-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding-left: 28px;
+        }
+
+        .todo-status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 5px 9px;
+            background: #fff4e5;
+            color: #b26a00;
+        }
+
+        .todo-status-badge.done {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .todo-delete-btn {
             background: #ffebee;
             color: #c62828;
-            border: none;
-            border-radius: 8px;
-            padding: 6px 10px;
-            cursor: pointer;
+            border-radius: 9px;
+            padding: 7px 10px;
             font-size: 0.8rem;
-            flex-shrink: 0;
         }
 
-        .todo-empty {
-            color: #7c8794;
-            text-align: center;
-            padding: 20px 10px;
-            font-size: 0.92rem;
+        .todo-clear-done {
+            background: #fff1f2;
+            color: #c62828;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            padding: 7px 10px;
         }
 
-        @media (max-width: 1100px) {
-            body {
-                overflow: auto;
-                height: auto;
+        @media (max-width: 640px) {
+            header {
+                padding: 0 12px;
             }
 
-            #main-layout {
-                flex-direction: column;
-                height: auto;
+            .stats-panel {
+                gap: 10px;
             }
 
-            #calendar-container {
+            .todo-row-2 {
+                grid-template-columns: 1fr;
+            }
+
+            #todo-drawer {
                 width: 100%;
-                height: auto;
-                min-height: 60vh;
-            }
-
-            #todo-panel {
-                width: 100%;
-                height: auto;
-                min-height: 320px;
-                border-left: none;
-                border-top: 1px solid var(--border-color);
+                max-width: 100%;
             }
         }
     </style>
@@ -396,35 +657,57 @@
         </div>
         <div class="stats-panel">
             <div id="clear-btn" onclick="limpiarSeleccionVisual()">Limpiar Selección</div>
-            <div class="stat-box"><span class="stat-value" id="progress-percent">0%</span><span class="stat-label">Completado</span></div>
-            <div class="stat-box"><span class="stat-value" id="red-counter-val">0</span><span class="stat-label">Festivos</span></div>
+            <div class="stat-box">
+                <span class="stat-value" id="progress-percent">0%</span>
+                <span class="stat-label">Completado</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-value" id="red-counter-val">0</span>
+                <span class="stat-label">Festivos</span>
+            </div>
         </div>
     </header>
 
-    <div id="main-layout">
-        <div id="calendar-container"></div>
+    <div id="calendar-container"></div>
 
-        <div id="todo-panel">
-            <div class="todo-panel-header">
+    <button id="todo-toggle-btn" title="Abrir To Do">🗂</button>
+    <div id="todo-overlay"></div>
+
+    <div id="todo-drawer">
+        <div class="todo-drawer-header">
+            <div>
                 <h3>To Do</h3>
-                <p>Lista rápida y visual</p>
+                <p>Tareas, fecha y comentarios</p>
             </div>
+            <button class="todo-close-btn" id="todo-close-btn">×</button>
+        </div>
 
-            <div class="todo-input-row">
-                <input type="text" id="todoInput" placeholder="Nueva tarea...">
-                <button id="addTodoBtn">+</button>
+        <div class="todo-form">
+            <input type="text" id="todoTitle" placeholder="Título de la tarea">
+            <div class="todo-row-2">
+                <input type="date" id="todoDate">
+                <select id="todoStatus">
+                    <option value="pending">Pendiente</option>
+                    <option value="done">Hecha</option>
+                </select>
             </div>
+            <textarea id="todoComments" placeholder="Comentarios, detalles, recordatorios..."></textarea>
+            <button class="todo-add-btn" id="addTodoBtn">Añadir tarea</button>
+        </div>
 
+        <div class="todo-toolbar">
             <div class="todo-filters">
                 <button class="todo-filter active" data-filter="all">Todas</button>
                 <button class="todo-filter" data-filter="pending">Pendientes</button>
                 <button class="todo-filter" data-filter="done">Hechas</button>
             </div>
-
-            <div class="todo-summary" id="todoSummary">0 pendientes</div>
-
-            <div id="todoList"></div>
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <span class="todo-summary" id="todoSummary">0 pendientes</span>
+                <button class="todo-clear-done" id="clearDoneBtn">Borrar hechas</button>
+            </div>
         </div>
+
+        <div class="todo-list" id="todoList"></div>
     </div>
 
     <div class="modal-overlay" id="noteModal">
@@ -438,7 +721,10 @@
                 <div class="color-dot" style="background: var(--c-trabajo);" onclick="selectColor('trabajo')"></div>
             </div>
             <textarea id="noteText" placeholder="Escribe algo para todos los días seleccionados..."></textarea>
-            <button class="agenda-toggle" onclick="toggleSchedule()"><span>🕒 Agenda Detallada</span><span id="arrow-icon">▼</span></button>
+            <button class="agenda-toggle" onclick="toggleSchedule()">
+                <span>🕒 Agenda Detallada</span>
+                <span id="arrow-icon">▼</span>
+            </button>
             <div id="hourly-container"></div>
             <div class="modal-buttons">
                 <button class="btn-save" id="btnGuardar">Guardar en Nube</button>
@@ -458,19 +744,35 @@
         const currentYear = 2026;
         let eventsData = {};
 
-        let todos = JSON.parse(localStorage.getItem('todos_simple_visual') || '[]');
-        let currentTodoFilter = 'all';
-
         let selectedDays = [];
         let isShiftPressed = false;
 
-        window.addEventListener('keydown', (e) => { if (e.key === "Shift") isShiftPressed = true; });
-        window.addEventListener('keyup', (e) => { if (e.key === "Shift") isShiftPressed = false; });
+        let todos = JSON.parse(localStorage.getItem('todos_productivos_drawer_v1') || '[]');
+        let currentTodoFilter = 'all';
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === "Shift") isShiftPressed = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === "Shift") isShiftPressed = false;
+        });
 
         const holidays2026 = {
-            "0-1":"Año Nuevo","0-6":"Reyes","0-29":"San Valero","2-5":"Cincomarzada","3-2":"Jueves Santo","3-3":"Viernes Santo",
-            "3-23":"San Jorge","4-1":"Día del Trabajo","7-15":"Asunción","9-12":"El Pilar","10-1":"Todos los Santos",
-            "11-6":"Constitución","11-8":"Inmaculada","11-25":"Navidad"
+            "0-1":"Año Nuevo",
+            "0-6":"Reyes",
+            "0-29":"San Valero",
+            "2-5":"Cincomarzada",
+            "3-2":"Jueves Santo",
+            "3-3":"Viernes Santo",
+            "3-23":"San Jorge",
+            "4-1":"Día del Trabajo",
+            "7-15":"Asunción",
+            "9-12":"El Pilar",
+            "10-1":"Todos los Santos",
+            "11-6":"Constitución",
+            "11-8":"Inmaculada",
+            "11-25":"Navidad"
         };
 
         async function init() {
@@ -489,7 +791,11 @@
                 }
                 if (data) {
                     data.forEach(row => {
-                        eventsData[row.fecha] = JSON.parse(row.otros);
+                        try {
+                            eventsData[row.fecha] = JSON.parse(row.otros);
+                        } catch (e) {
+                            console.error('Error parseando fila:', row, e);
+                        }
                     });
                 }
             } catch (err) {
@@ -499,8 +805,10 @@
 
         function generarCalendario() {
             container.innerHTML = '';
+
             for (let m = 0; m < 12; m++) {
                 const daysInMonth = new Date(currentYear, m + 1, 0).getDate();
+
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateId = `${currentYear}-${m}-${d}`;
                     const dateObj = new Date(currentYear, m, d);
@@ -514,8 +822,14 @@
                     }
 
                     const data = eventsData[dateId] || { color: 'default', text: '', schedule: {} };
-                    if (data.color && data.color !== 'default') cell.classList.add(`bg-${data.color}`);
-                    if (data.text || (data.schedule && Object.keys(data.schedule).length > 0)) cell.classList.add('has-note');
+
+                    if (data.color && data.color !== 'default') {
+                        cell.classList.add(`bg-${data.color}`);
+                    }
+
+                    if (data.text || (data.schedule && Object.keys(data.schedule).length > 0)) {
+                        cell.classList.add('has-note');
+                    }
 
                     const now = new Date();
                     if (
@@ -564,6 +878,7 @@
         function actualizarUISeleccion() {
             const info = document.getElementById('selection-info');
             const btn = document.getElementById('clear-btn');
+
             if (selectedDays.length > 1) {
                 info.innerText = `Seleccionados: ${selectedDays.length} días`;
                 btn.style.display = "block";
@@ -583,20 +898,31 @@
         }
 
         let selectedColor = 'default';
-        const hoursList = ["06:00", "07:00", "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"];
+
+        const hoursList = [
+            "06:00", "07:00", "08:00", "09:00", "10:00", "11:00",
+            "12:00", "13:00", "14:00", "15:00", "16:00", "17:00",
+            "18:00", "19:00", "20:00", "21:00", "22:00", "23:00", "00:00"
+        ];
 
         function generateHourlyInputs() {
             const cont = document.getElementById('hourly-container');
             cont.innerHTML = '';
             hoursList.forEach(h => {
-                cont.innerHTML += `<div class="hour-row"><div class="hour-label">${h}</div><input type="text" class="hour-input" data-hour="${h}"></div>`;
+                cont.innerHTML += `
+                    <div class="hour-row">
+                        <div class="hour-label">${h}</div>
+                        <input type="text" class="hour-input" data-hour="${h}">
+                    </div>
+                `;
             });
         }
         generateHourlyInputs();
 
         function openModal(id, day, month) {
             const isMultiple = selectedDays.length > 1;
-            document.getElementById('modalTitle').innerText = isMultiple ? `Editando ${selectedDays.length} días` : `${day} de ${month}`;
+            document.getElementById('modalTitle').innerText =
+                isMultiple ? `Editando ${selectedDays.length} días` : `${day} de ${month}`;
 
             const data = isMultiple
                 ? { text: '', color: 'default', schedule: {} }
@@ -604,9 +930,11 @@
 
             document.getElementById('noteText').value = data.text || '';
             selectColor(data.color || 'default');
+
             document.querySelectorAll('.hour-input').forEach(inp => {
                 inp.value = (data.schedule && data.schedule[inp.dataset.hour]) ? data.schedule[inp.dataset.hour] : '';
             });
+
             document.getElementById('noteModal').style.display = 'flex';
         }
 
@@ -622,7 +950,9 @@
 
             const scheduleObj = {};
             document.querySelectorAll('.hour-input').forEach(inp => {
-                if (inp.value.trim()) scheduleObj[inp.dataset.hour] = inp.value.trim();
+                if (inp.value.trim()) {
+                    scheduleObj[inp.dataset.hour] = inp.value.trim();
+                }
             });
 
             const dataObj = {
@@ -636,7 +966,9 @@
                     await _supabase.from('Calendario').delete().eq('fecha', dayId);
 
                     if (dataObj.text || dataObj.color !== 'default' || Object.keys(scheduleObj).length > 0) {
-                        await _supabase.from('Calendario').insert([{ fecha: dayId, otros: JSON.stringify(dataObj) }]);
+                        await _supabase.from('Calendario').insert([
+                            { fecha: dayId, otros: JSON.stringify(dataObj) }
+                        ]);
                         eventsData[dayId] = dataObj;
                     } else {
                         delete eventsData[dayId];
@@ -660,8 +992,7 @@
         function selectColor(c) {
             selectedColor = c;
             document.querySelectorAll('.color-dot').forEach(d => {
-                const onclickAttr = d.getAttribute('onclick') || '';
-                const isSelected = onclickAttr.includes(`'${c}'`);
+                const isSelected = (d.getAttribute('onclick') || '').includes(`'${c}'`);
                 d.classList.toggle('selected', isSelected);
             });
         }
@@ -680,33 +1011,67 @@
             const start = new Date(currentYear, 0, 1);
             let dayOfYear = Math.floor((today - start) / (1000 * 60 * 60 * 24)) + 1;
             dayOfYear = Math.max(0, Math.min(365, dayOfYear));
-            document.getElementById('progress-percent').innerText = `${((dayOfYear / totalDays) * 100).toFixed(1)}%`;
+
+            document.getElementById('progress-percent').innerText =
+                `${((dayOfYear / totalDays) * 100).toFixed(1)}%`;
+
             document.getElementById('red-counter-val').innerText = Object.keys(holidays2026).length;
         }
 
         /* TO DO */
         function saveTodos() {
-            localStorage.setItem('todos_simple_visual', JSON.stringify(todos));
+            localStorage.setItem('todos_productivos_drawer_v1', JSON.stringify(todos));
+        }
+
+        function formatDateDisplay(value) {
+            if (!value) return '';
+            const [year, month, day] = value.split('-');
+            if (!year || !month || !day) return value;
+            return `${day}/${month}/${year}`;
         }
 
         function escapeHtml(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
 
+        function openTodoDrawer() {
+            document.getElementById('todo-drawer').classList.add('open');
+            document.getElementById('todo-overlay').classList.add('open');
+        }
+
+        function closeTodoDrawer() {
+            document.getElementById('todo-drawer').classList.remove('open');
+            document.getElementById('todo-overlay').classList.remove('open');
+        }
+
         function addTodo() {
-            const input = document.getElementById('todoInput');
-            const text = input.value.trim();
-            if (!text) return;
+            const titleEl = document.getElementById('todoTitle');
+            const dateEl = document.getElementById('todoDate');
+            const commentsEl = document.getElementById('todoComments');
+            const statusEl = document.getElementById('todoStatus');
+
+            const title = titleEl.value.trim();
+            const date = dateEl.value;
+            const comments = commentsEl.value.trim();
+            const status = statusEl.value;
+
+            if (!title) return;
 
             todos.unshift({
                 id: Date.now(),
-                text: text,
-                done: false
+                title,
+                date,
+                comments,
+                done: status === 'done'
             });
 
-            input.value = '';
+            titleEl.value = '';
+            dateEl.value = '';
+            commentsEl.value = '';
+            statusEl.value = 'pending';
+
             saveTodos();
             renderTodos();
         }
@@ -725,6 +1090,12 @@
             renderTodos();
         }
 
+        function clearDoneTodos() {
+            todos = todos.filter(todo => !todo.done);
+            saveTodos();
+            renderTodos();
+        }
+
         function getFilteredTodos() {
             if (currentTodoFilter === 'pending') return todos.filter(t => !t.done);
             if (currentTodoFilter === 'done') return todos.filter(t => t.done);
@@ -733,59 +1104,69 @@
 
         function updateTodoSummary() {
             const pending = todos.filter(t => !t.done).length;
-            const summary = document.getElementById('todoSummary');
-            summary.innerText = `${pending} pendiente${pending === 1 ? '' : 's'}`;
+            document.getElementById('todoSummary').textContent =
+                `${pending} pendiente${pending === 1 ? '' : 's'}`;
         }
 
         function renderTodos() {
             const list = document.getElementById('todoList');
-            if (!list) return;
-
             const filtered = getFilteredTodos();
+
             list.innerHTML = '';
 
             if (!filtered.length) {
-                list.innerHTML = '<div class="todo-empty">No hay tareas en esta vista</div>';
+                list.innerHTML = `<div class="todo-empty">No hay tareas en esta vista</div>`;
                 updateTodoSummary();
                 return;
             }
 
             filtered.forEach(todo => {
-                const item = document.createElement('div');
-                item.className = `todo-item ${todo.done ? 'done' : ''}`;
+                const card = document.createElement('div');
+                card.className = `todo-card ${todo.done ? 'done' : ''}`;
 
-                item.innerHTML = `
-                    <input class="todo-check" type="checkbox" ${todo.done ? 'checked' : ''}>
-                    <div class="todo-text">${escapeHtml(todo.text)}</div>
-                    <button class="todo-delete">X</button>
+                card.innerHTML = `
+                    <div class="todo-card-top">
+                        <input class="todo-card-check" type="checkbox" ${todo.done ? 'checked' : ''}>
+                        <div class="todo-card-main">
+                            <div class="todo-card-title">${escapeHtml(todo.title)}</div>
+                            ${todo.date ? `<div class="todo-card-date">📅 ${escapeHtml(formatDateDisplay(todo.date))}</div>` : ''}
+                        </div>
+                    </div>
+
+                    ${todo.comments ? `<div class="todo-card-comments">${escapeHtml(todo.comments)}</div>` : ''}
+
+                    <div class="todo-card-footer">
+                        <span class="todo-status-badge ${todo.done ? 'done' : ''}">
+                            ${todo.done ? 'Hecha' : 'Pendiente'}
+                        </span>
+                        <button class="todo-delete-btn">Eliminar</button>
+                    </div>
                 `;
 
-                item.querySelector('.todo-check').addEventListener('change', () => toggleTodo(todo.id));
-                item.querySelector('.todo-delete').addEventListener('click', () => deleteTodo(todo.id));
+                card.querySelector('.todo-card-check').addEventListener('change', () => toggleTodo(todo.id));
+                card.querySelector('.todo-delete-btn').addEventListener('click', () => deleteTodo(todo.id));
 
-                list.appendChild(item);
+                list.appendChild(card);
             });
 
             updateTodoSummary();
         }
 
         function initTodo() {
-            const addBtn = document.getElementById('addTodoBtn');
-            const input = document.getElementById('todoInput');
-            const filters = document.querySelectorAll('.todo-filter');
+            document.getElementById('todo-toggle-btn').addEventListener('click', openTodoDrawer);
+            document.getElementById('todo-close-btn').addEventListener('click', closeTodoDrawer);
+            document.getElementById('todo-overlay').addEventListener('click', closeTodoDrawer);
+            document.getElementById('addTodoBtn').addEventListener('click', addTodo);
+            document.getElementById('clearDoneBtn').addEventListener('click', clearDoneTodos);
 
-            if (addBtn) addBtn.addEventListener('click', addTodo);
+            document.getElementById('todoTitle').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') addTodo();
+            });
 
-            if (input) {
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') addTodo();
-                });
-            }
-
-            filters.forEach(btn => {
+            document.querySelectorAll('.todo-filter').forEach(btn => {
                 btn.addEventListener('click', () => {
                     currentTodoFilter = btn.dataset.filter;
-                    filters.forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.todo-filter').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     renderTodos();
                 });
